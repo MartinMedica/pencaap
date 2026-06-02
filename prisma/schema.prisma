@@ -1,0 +1,130 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL_UNPOOLED")
+}
+
+model User {
+  id          String       @id @default(cuid())
+  clerkId     String       @unique
+  name        String
+  email       String       @unique
+  createdAt   DateTime     @default(now())
+  memberships PoolMember[]
+  poolsOwned  Pool[]       @relation("PoolOwner")
+  predictions Prediction[]
+}
+
+model Pool {
+  id                 String       @id @default(cuid())
+  name               String
+  inviteCode         String       @unique
+  ownerId            String
+  championPickByUser Json?
+  finalistPickByUser Json?
+  owner              User         @relation("PoolOwner", fields: [ownerId], references: [id])
+  createdAt          DateTime     @default(now())
+  members            PoolMember[]
+  predictions        Prediction[]
+
+  @@index([ownerId])
+}
+
+model PoolMember {
+  poolId   String
+  userId   String
+  role     MemberRole @default(MEMBER)
+  joinedAt DateTime   @default(now())
+  pool     Pool       @relation(fields: [poolId], references: [id])
+  user     User       @relation(fields: [userId], references: [id])
+
+  @@id([poolId, userId])
+  @@index([userId])
+}
+
+model Team {
+  id      String  @id
+  name    String
+  group   String?
+  homeFor Match[] @relation("HomeTeam")
+  awayFor Match[] @relation("AwayTeam")
+}
+
+model Match {
+  id          String       @id
+  phase       Phase
+  homeTeamId  String
+  awayTeamId  String
+  homeTeamOverrideId String?
+  awayTeamOverrideId String?
+  startsAt    DateTime
+  order       Int
+  knockout    Boolean      @default(false)
+  predictionLockMode MatchLockMode @default(AUTO)
+  predictionLockUpdatedAt DateTime?
+  homeTeam    Team         @relation("HomeTeam", fields: [homeTeamId], references: [id])
+  awayTeam    Team         @relation("AwayTeam", fields: [awayTeamId], references: [id])
+  predictions Prediction[]
+  result      Result?
+
+  @@index([homeTeamId])
+  @@index([awayTeamId])
+}
+
+model Prediction {
+  id              String   @id @default(cuid())
+  poolId          String
+  userId          String
+  matchId         String
+  homeGoals       Int?
+  awayGoals       Int?
+  qualifiedTeamId String?
+  championTeamId  String?
+  finalistTeamIds Json?
+  points          Int      @default(0)
+  updatedAt       DateTime @updatedAt
+  pool            Pool     @relation(fields: [poolId], references: [id])
+  user            User     @relation(fields: [userId], references: [id])
+  match           Match    @relation(fields: [matchId], references: [id])
+
+  @@unique([poolId, userId, matchId])
+  @@index([userId])
+  @@index([matchId])
+}
+
+model Result {
+  matchId          String   @id
+  homeGoals        Int
+  awayGoals        Int
+  qualifiedTeamId  String?
+  championTeamId   String?
+  finalistTeamIds  Json?
+  updatedAt        DateTime @updatedAt
+  match            Match    @relation(fields: [matchId], references: [id])
+}
+
+enum MemberRole {
+  ADMIN
+  MEMBER
+}
+
+enum Phase {
+  GRUPOS
+  TREINTAIDOSAVOS
+  DIECISEISAVOS
+  OCTAVOS
+  CUARTOS
+  SEMIFINAL
+  TERCER_PUESTO
+  FINAL
+}
+
+enum MatchLockMode {
+  AUTO
+  LOCKED
+  OPEN
+}
