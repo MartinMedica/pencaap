@@ -11,7 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 export function Hero({ user }: { user: User | null }) {
   return (
     <section className="bg-ink text-white">
-      <div className="mx-auto grid min-h-[420px] max-w-6xl content-end gap-8 px-4 py-8 md:grid-cols-[1fr_360px] md:items-end">
+      <div className="mx-auto grid min-h-[420px] max-w-6xl content-end gap-8 px-3 py-8 sm:px-4 md:grid-cols-[1fr_360px] md:items-end">
         <div className="pb-2">
           <Badge variant="subtle" className="mb-3 gap-2">
             <Trophy size={16} /> Mundial 2026 con amigos
@@ -21,7 +21,7 @@ export function Hero({ user }: { user: User | null }) {
             Crea un grupo, comparte el link, carga predicciones por fase y mira el ranking actualizarse cuando el admin
             ingresa los resultados.
           </p>
-          <div className="mt-6 grid grid-cols-3 gap-3 text-sm text-[#dce7df]">
+          <div className="mt-6 grid gap-3 text-sm text-[#dce7df] sm:grid-cols-3">
             <HeroMetric icon={<Users size={18} />} label="Grupos privados" />
             <HeroMetric icon={<CalendarDays size={18} />} label="Fixture por fases" />
             <HeroMetric icon={<Shield size={18} />} label="Edicion bloqueada" />

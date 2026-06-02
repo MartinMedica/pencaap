@@ -176,13 +176,13 @@ export function MatchCard({
   return (
     <Card>
       <CardContent className="pt-4">
-        <div className="flex items-start justify-between gap-3">
-          <div>
+        <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-start">
+          <div className="min-w-0">
             <p className="text-xs font-semibold uppercase text-[#68736a]">{formattedStartsAt}</p>
-            <h3 className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2 text-lg font-bold">
-              <TeamLabel teamId={homeTeamId} name={homeName} size="lg" />
+            <h3 className="mt-2 grid min-w-0 gap-2 text-lg font-bold sm:flex sm:flex-wrap sm:items-center sm:gap-x-3 sm:gap-y-2">
+              <TeamLabel teamId={homeTeamId} name={homeName} size="lg" className="min-w-0" />
               <span className="text-sm text-[#68736a]">vs</span>
-              <TeamLabel teamId={awayTeamId} name={awayName} size="lg" />
+              <TeamLabel teamId={awayTeamId} name={awayName} size="lg" className="min-w-0" />
             </h3>
             {!resolved ? (
               <p className="mt-2 text-sm text-[#68736a]">
@@ -200,7 +200,9 @@ export function MatchCard({
               </div>
             ) : null}
           </div>
-          <Badge variant={!canEdit ? "destructive" : "default"}>{!resolved ? "Pendiente" : adminMode ? lockLabel(match, matchSetting) : canEdit ? "Editable" : "Bloqueado"}</Badge>
+          <div className="sm:justify-self-end">
+            <Badge variant={!canEdit ? "destructive" : "default"}>{!resolved ? "Pendiente" : adminMode ? lockLabel(match, matchSetting) : canEdit ? "Editable" : "Bloqueado"}</Badge>
+          </div>
         </div>
 
         {adminMode && match.knockout ? (
@@ -224,8 +226,8 @@ export function MatchCard({
 
         {!adminMode && !canEdit ? null : (
           <>
-            <div className="mt-4 grid grid-cols-[1fr_76px_76px] items-end gap-2">
-              <div className="text-sm font-semibold text-[#586257]">{adminMode ? "Resultado real" : "Tu prediccion"}</div>
+            <div className="mt-4 grid grid-cols-2 items-end gap-2 sm:grid-cols-[1fr_76px_76px]">
+              <div className="col-span-2 text-sm font-semibold text-[#586257] sm:col-span-1">{adminMode ? "Resultado real" : "Tu prediccion"}</div>
               <ScoreField label={homeName} value={homeGoals} onChange={updateHomeGoals} disabled={!canEdit} />
               <ScoreField label={awayName} value={awayGoals} onChange={updateAwayGoals} disabled={!canEdit} />
             </div>

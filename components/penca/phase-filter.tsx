@@ -13,14 +13,14 @@ type PhaseFilterProps = {
 
 export function PhaseFilter({ activePhase, state, onPhase }: PhaseFilterProps) {
   return (
-    <div className="flex gap-2 overflow-x-auto pb-1">
+    <div className="flex flex-wrap gap-2 pb-1">
       {phases.map((phase) => {
         const enabled = phaseEnabled(phase, state);
         return (
           <Button
             key={phase}
             variant={activePhase === phase ? "default" : "ghost"}
-            className={activePhase === phase ? "shrink-0" : "shrink-0 bg-white"}
+            className={activePhase === phase ? "min-w-0 flex-1 basis-[calc(50%-0.25rem)] px-2 sm:flex-none sm:basis-auto sm:px-4" : "min-w-0 flex-1 basis-[calc(50%-0.25rem)] bg-white px-2 sm:flex-none sm:basis-auto sm:px-4"}
             disabled={!enabled}
             onClick={() => onPhase(phase)}
           >

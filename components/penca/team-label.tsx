@@ -19,7 +19,7 @@ export function TeamLabel({ teamId, name = teamName(teamId), size = "md", classN
   const flagUrl = teamFlagUrl(teamId);
 
   return (
-    <span className={cn("inline-flex min-w-0 items-center gap-2", className)}>
+    <span className={cn("inline-flex max-w-full min-w-0 items-center gap-2", className)}>
       {flagUrl ? (
         <Image
           className={cn("shrink-0 rounded-sm object-cover shadow-sm ring-1 ring-black/10", sizes[size])}
@@ -31,7 +31,7 @@ export function TeamLabel({ teamId, name = teamName(teamId), size = "md", classN
       ) : (
         <span className={cn("shrink-0 rounded-sm bg-[#d8ded3] ring-1 ring-black/10", sizes[size])} />
       )}
-      <span className="truncate">{name}</span>
+      <span className="min-w-0 truncate">{name}</span>
     </span>
   );
 }

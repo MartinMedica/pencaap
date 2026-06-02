@@ -136,8 +136,8 @@ export function PencaApp({
     <main className="min-h-screen bg-[#f7f8f3]">
       <Hero user={currentUser} />
       {currentUser ? (
-        <section className="mx-auto grid w-full max-w-6xl gap-5 px-4 pb-10 pt-5 lg:grid-cols-[300px_1fr]">
-          <aside className="space-y-4">
+        <section className="mx-auto grid w-full max-w-6xl gap-5 px-3 pb-10 pt-5 sm:px-4 lg:grid-cols-[300px_1fr]">
+          <aside className="min-w-0 space-y-4">
             <PoolPanel
               pools={state.pools.filter((pool) => memberships.some((member) => member.poolId === pool.id))}
               activePool={activePool}
@@ -154,7 +154,7 @@ export function PencaApp({
           </aside>
 
           {activePool ? (
-            <section className="space-y-4">
+            <section className="min-w-0 space-y-4">
               <SectionTabs activeTab={tab} isAdmin={isAdmin} onChange={setTab} />
               {tab === "ranking" ? (
                 <Ranking state={state} poolId={activePool.id} />
