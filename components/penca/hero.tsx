@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
 import { CalendarDays, LogIn, Shield, Trophy, Users } from "lucide-react";
 import type { User } from "@/lib/types";
@@ -43,6 +43,12 @@ function HeroMetric({ icon, label }: { icon: ReactNode; label: string }) {
 }
 
 function LoginCard() {
+  const [returnUrl, setReturnUrl] = useState("/");
+
+  useEffect(() => {
+    setReturnUrl(`${window.location.pathname}${window.location.search}`);
+  }, []);
+
   return (
     <Card className="text-ink">
       <CardContent className="pt-4">
@@ -51,12 +57,12 @@ function LoginCard() {
           Usa Clerk para entrar con email o proveedor social y mantener tus pencas sincronizadas.
         </p>
         <div className="mt-4 grid gap-2">
-          <SignInButton mode="modal">
+          <SignInButton mode="modal" forceRedirectUrl={returnUrl}>
             <Button variant="primary" size="lg" className="w-full">
               <LogIn size={18} /> Iniciar sesion
             </Button>
           </SignInButton>
-          <SignUpButton mode="modal">
+          <SignUpButton mode="modal" forceRedirectUrl={returnUrl}>
             <Button variant="outline" size="lg" className="w-full">
               Crear cuenta
             </Button>
