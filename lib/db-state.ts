@@ -69,16 +69,29 @@ export async function ensureCurrentDbUser() {
   const clerkUser = await currentUser();
   if (!clerkUser) return null;
 
-  const email = clerkUser.emailAddresses.find((item) => item.id === clerkUser.primaryEmailAddressId)?.emailAddress;
+  const email = clerkUser.emailAddresses.find((item) => item.id === clerkUser.primaryEmailAddressId)?.emailAddress ?? `${clerkUser.id}@clerk.local`;
   const name = clerkUser.fullName ?? clerkUser.username ?? email ?? "Usuario";
+  const existingByClerk = await prisma.user.findUnique({ where: { clerkId: clerkUser.id } });
+  if (existingByClerk) {
+    return prisma.user.update({
+      where: { id: existingByClerk.id },
+      data: { name, email }
+    });
+  }
 
-  return prisma.user.upsert({
-    where: { clerkId: clerkUser.id },
-    update: { name, email: email ?? `${clerkUser.id}@clerk.local` },
-    create: {
+  const existingByEmail = await prisma.user.findUnique({ where: { email } });
+  if (existingByEmail) {
+    return prisma.user.update({
+      where: { id: existingByEmail.id },
+      data: { clerkId: clerkUser.id, name }
+    });
+  }
+
+  return prisma.user.create({
+    data: {
       clerkId: clerkUser.id,
       name,
-      email: email ?? `${clerkUser.id}@clerk.local`
+      email
     }
   });
 }
