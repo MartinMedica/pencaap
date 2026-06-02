@@ -1,9 +1,10 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { prisma } from "./prisma";
+import { matchSettingSelect, toUiMatchSetting, toUiResult } from "./db-mappers";
 import { dbTeams, matches } from "./fixture";
 import { recalculatePredictions } from "./scoring";
 import type { AppState, Phase, User } from "./types";
-import type { MemberRole, Phase as DbPhase, Prisma } from "@prisma/client";
+import type { MemberRole, Phase as DbPhase } from "@prisma/client";
 
 const phaseToDb: Record<Phase, DbPhase> = {
   Grupos: "GRUPOS",
@@ -95,9 +96,7 @@ export async function getAppStateForUser(userId?: string): Promise<AppState> {
     prisma.poolMember.findMany({ where: { poolId: { in: visiblePoolIds } } }),
     prisma.prediction.findMany({ where: { poolId: { in: visiblePoolIds } } }),
     prisma.result.findMany(),
-    prisma.match.findMany({
-      select: { id: true, predictionLockMode: true, predictionLockUpdatedAt: true, homeTeamOverrideId: true, awayTeamOverrideId: true }
-    })
+    prisma.match.findMany({ select: matchSettingSelect })
   ]);
 
   const state: AppState = {
@@ -125,21 +124,8 @@ export async function getAppStateForUser(userId?: string): Promise<AppState> {
       points: prediction.points,
       updatedAt: prediction.updatedAt.toISOString()
     })),
-    results: results.map((result) => ({
-      matchId: result.matchId,
-      homeGoals: result.homeGoals,
-      awayGoals: result.awayGoals,
-      qualifiedTeamId: result.qualifiedTeamId,
-      championTeamId: result.championTeamId ?? undefined,
-      finalistTeamIds: jsonStringArray(result.finalistTeamIds)
-    })),
-    matchSettings: dbMatches.map((match) => ({
-      matchId: match.id,
-      predictionLockMode: match.predictionLockMode,
-      predictionLockUpdatedAt: match.predictionLockUpdatedAt?.toISOString() ?? null,
-      homeTeamOverrideId: match.homeTeamOverrideId,
-      awayTeamOverrideId: match.awayTeamOverrideId
-    }))
+    results: results.map(toUiResult),
+    matchSettings: dbMatches.map(toUiMatchSetting)
   };
 
   return {
@@ -155,8 +141,4 @@ export function uiUser(user: User | Awaited<ReturnType<typeof ensureCurrentDbUse
 
 function roleToUi(role: MemberRole) {
   return role === "ADMIN" ? "admin" : "member";
-}
-
-function jsonStringArray(value: Prisma.JsonValue | null) {
-  return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : undefined;
 }

@@ -4,7 +4,6 @@ import { teamName, teams } from "@/lib/fixture";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
-import { TeamLabel } from "./team-label";
 
 type TextFieldProps = {
   label: string;
@@ -69,8 +68,4 @@ export function TeamSelect({ label, value, onChange, options = teams.map((team) 
       </Select>
     </Label>
   );
-}
-
-export function TeamOptionPreview({ teamId }: { teamId: string }) {
-  return <TeamLabel teamId={teamId} size="sm" />;
 }

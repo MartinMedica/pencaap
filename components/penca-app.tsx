@@ -62,9 +62,9 @@ export function PencaApp({
   function handleCreatePool(name: string) {
     if (!currentUser) return;
     run(async () => {
-      const nextState = await createPoolAction(name);
+      const { state: nextState, poolId } = await createPoolAction(name);
       setState(nextState);
-      setActivePoolId(nextState.pools.at(-1)?.id ?? null);
+      setActivePoolId(poolId);
     });
   }
 

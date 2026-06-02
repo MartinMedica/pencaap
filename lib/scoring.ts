@@ -17,22 +17,30 @@ export function scorePrediction(prediction: Prediction, result?: Result, match?:
 }
 
 export function recalculatePredictions(state: AppState) {
+  const resultsByMatchId = new Map(state.results.map((result) => [result.matchId, result]));
+  const matchesById = new Map(matches.map((match) => [match.id, match]));
+
   return state.predictions.map((prediction) => {
-    const result = state.results.find((item) => item.matchId === prediction.matchId);
-    const match = matches.find((item) => item.id === prediction.matchId);
+    const result = resultsByMatchId.get(prediction.matchId);
+    const match = matchesById.get(prediction.matchId);
     return { ...prediction, points: scorePrediction(prediction, result, match) };
   });
 }
 
 export function rankingForPool(state: AppState, poolId: string) {
   const members = state.poolMembers.filter((member) => member.poolId === poolId);
+  const usersById = new Map(state.users.map((user) => [user.id, user]));
+  const pointsByUserId = new Map<string, number>();
+
+  for (const prediction of state.predictions) {
+    if (prediction.poolId !== poolId) continue;
+    pointsByUserId.set(prediction.userId, (pointsByUserId.get(prediction.userId) ?? 0) + prediction.points);
+  }
 
   return members
     .map((member) => {
-      const user = state.users.find((item) => item.id === member.userId);
-      const matchPoints = state.predictions
-        .filter((prediction) => prediction.poolId === poolId && prediction.userId === member.userId)
-        .reduce((sum, prediction) => sum + prediction.points, 0);
+      const user = usersById.get(member.userId);
+      const matchPoints = pointsByUserId.get(member.userId) ?? 0;
 
       return {
         userId: member.userId,

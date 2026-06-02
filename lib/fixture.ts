@@ -201,11 +201,6 @@ export const dbTeams: Team[] = [
     .map((teamId) => ({ id: teamId, name: seedDisplayName(teamId) }))
 ];
 
-export function bonusLocked() {
-  const firstKnockout = matches.find((match) => match.knockout);
-  return firstKnockout ? Date.now() >= new Date(firstKnockout.startsAt).getTime() : false;
-}
-
 export function teamById(id: string) {
   return teams.find((team) => team.id === id);
 }

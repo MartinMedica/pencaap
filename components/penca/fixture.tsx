@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { groups, matches } from "@/lib/fixture";
 import type { AppState, Match, MatchLockMode, Pool, Result, User } from "@/lib/types";
 import { MatchCard } from "./match-card";
@@ -110,6 +111,18 @@ function MatchGrid({
   onMatchLockChange: (matchId: string, mode: MatchLockMode) => Promise<void>;
   onTeamOverrideChange: (matchId: string, side: "home" | "away", teamId: string | null) => Promise<void>;
 }) {
+  const matchSettingsById = useMemo(() => new Map(state.matchSettings.map((setting) => [setting.matchId, setting])), [state.matchSettings]);
+  const predictionsByMatchId = useMemo(
+    () =>
+      new Map(
+        state.predictions
+          .filter((prediction) => prediction.poolId === pool.id && prediction.userId === user.id)
+          .map((prediction) => [prediction.matchId, prediction])
+      ),
+    [pool.id, state.predictions, user.id]
+  );
+  const resultsByMatchId = useMemo(() => new Map(state.results.map((result) => [result.matchId, result])), [state.results]);
+
   return (
     <div className="grid gap-3">
       {items.map((match) => (
@@ -118,9 +131,9 @@ function MatchGrid({
           state={state}
           match={match}
           adminMode={adminMode}
-          matchLockMode={state.matchSettings.find((setting) => setting.matchId === match.id)?.predictionLockMode ?? match.predictionLockMode}
-          prediction={state.predictions.find((item) => item.poolId === pool.id && item.userId === user.id && item.matchId === match.id)}
-          result={state.results.find((item) => item.matchId === match.id)}
+          matchLockMode={matchSettingsById.get(match.id)?.predictionLockMode ?? match.predictionLockMode}
+          prediction={predictionsByMatchId.get(match.id)}
+          result={resultsByMatchId.get(match.id)}
           onPrediction={(prediction) => onPrediction(match, prediction)}
           onResult={onResult}
           onMatchLockChange={(mode) => onMatchLockChange(match.id, mode)}

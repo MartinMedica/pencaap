@@ -57,7 +57,7 @@ export function MatchCard({
   );
   const hasValidScore = isValidGoal(homeGoals) && isValidGoal(awayGoals);
   const isDraw = hasValidScore && Number(homeGoals) === Number(awayGoals);
-  const showTiebreaker = hasValidScore && isDraw && (match.knockout || adminMode);
+  const showTiebreaker = hasValidScore && isDraw && match.knockout;
   const isPredictionLocked = predictionLocked(match, matchSetting);
   const canEdit = resolved && (adminMode || !isPredictionLocked);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
@@ -102,9 +102,7 @@ export function MatchCard({
         : away > home
           ? awayTeamId
           : qualifiedTeamId
-      : isDraw
-        ? qualifiedTeamId
-        : null;
+      : null;
 
     if (adminMode) {
       await onResult({
@@ -120,7 +118,7 @@ export function MatchCard({
 
     await onPrediction({ homeGoals: home, awayGoals: away, qualifiedTeamId: match.knockout ? inferredQualifiedTeamId : null });
     return true;
-  }, [adminMode, awayGoals, homeGoals, homeTeamId, isDraw, match, onPrediction, onResult, qualifiedTeamId, resolved, result, awayTeamId]);
+  }, [adminMode, awayGoals, homeGoals, homeTeamId, match, onPrediction, onResult, qualifiedTeamId, resolved, result, awayTeamId]);
 
   useEffect(() => {
     if (editVersion === 0 || !canEdit || currentSignature === lastSavedRef.current) return;
@@ -235,16 +233,14 @@ export function MatchCard({
             {showTiebreaker ? (
               <div className="mt-3">
                 <TeamSelect
-                  label={match.knockout ? (adminMode ? "Ganador por penales" : "Ganador si hay penales") : "Ganador del empate"}
+                  label={adminMode ? "Ganador por penales" : "Ganador si hay penales"}
                   value={qualifiedTeamId}
                   onChange={updateQualifiedTeam}
                   options={[homeTeamId, awayTeamId]}
                   disabled={!canEdit}
                 />
                 <p className="mt-1 text-xs text-[#68736a]">
-                  {match.knockout
-                    ? "Solo aparece si el resultado termina empatado; define quien avanza por penales."
-                    : "Solo lo ve el admin para elegir quien queda mejor posicionado en este empate."}
+                  Solo aparece si el resultado termina empatado; define quien avanza por penales.
                 </p>
               </div>
             ) : null}
