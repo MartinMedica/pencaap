@@ -37,10 +37,10 @@ Variables necesarias en `.env.local` y en Vercel:
 ```bash
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
 CLERK_SECRET_KEY=
-DATABASE_URL=
+PENCA_DATABASE_URL=
 ```
 
-Despues de configurar `DATABASE_URL`, correr:
+Despues de configurar `PENCA_DATABASE_URL`, correr:
 
 ```bash
 pnpm db:generate
@@ -59,9 +59,9 @@ El fixture se siembra automaticamente al cargar la app. Reemplazar `lib/fixture.
 
 1. Subir el repo a GitHub.
 2. Importar el repo en Vercel como proyecto Next.js.
-3. Agregar las variables `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY` y `DATABASE_URL` en Production, Preview y Development.
+3. Agregar las variables `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY` y `PENCA_DATABASE_URL` en Production, Preview y Development.DATA
 4. Deployar. El build corre `prisma generate && next build`.
-5. Correr una vez `pnpm db:push` contra Neon desde local, o ejecutar `prisma db push` desde un entorno con `DATABASE_URL`.
+5. Correr una vez `pnpm db:push` contra Neon desde local, o ejecutar `prisma db push` desde un entorno con `PENCA_DATABASE_URL`.
 
 ## Puntaje
 
