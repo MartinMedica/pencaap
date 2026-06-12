@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { groups, matches } from "@/lib/fixture";
-import type { AppState, Match, MatchLockMode, Pool, Result, User } from "@/lib/types";
+import type { AppState, Match, MatchLockMode, Pool, Prediction, Result, User } from "@/lib/types";
 import { MatchCard } from "./match-card";
 import { PhaseFilter } from "./phase-filter";
 import type { PhaseValue, PredictionDraft } from "./types";
@@ -121,6 +121,16 @@ function MatchGrid({
       ),
     [pool.id, state.predictions, user.id]
   );
+  const groupPredictionsByMatchId = useMemo(() => {
+    const byMatchId = new Map<string, Prediction[]>();
+    for (const prediction of state.predictions) {
+      if (prediction.poolId !== pool.id) continue;
+      const predictions = byMatchId.get(prediction.matchId) ?? [];
+      predictions.push(prediction);
+      byMatchId.set(prediction.matchId, predictions);
+    }
+    return byMatchId;
+  }, [pool.id, state.predictions]);
   const resultsByMatchId = useMemo(() => new Map(state.results.map((result) => [result.matchId, result])), [state.results]);
 
   return (
@@ -133,6 +143,7 @@ function MatchGrid({
           adminMode={adminMode}
           matchLockMode={matchSettingsById.get(match.id)?.predictionLockMode ?? match.predictionLockMode}
           prediction={predictionsByMatchId.get(match.id)}
+          groupPredictions={groupPredictionsByMatchId.get(match.id) ?? []}
           result={resultsByMatchId.get(match.id)}
           onPrediction={(prediction) => onPrediction(match, prediction)}
           onResult={onResult}

@@ -2,13 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { formatMatchDate } from "@/lib/dates";
-import { displayTeamId, displayTeamName, isMatchResolved, sideCandidateTeamIds } from "@/lib/fixture";
+import { displayTeamId, displayTeamName, isMatchResolved, sideCandidateTeamIds, teamName } from "@/lib/fixture";
 import { lockLabel, predictionLocked } from "@/lib/locks";
-import { Lock, Unlock } from "lucide-react";
+import { ChevronDown, Lock, Unlock, Users } from "lucide-react";
 import type { AppState, Match, MatchLockMode, Prediction, Result } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 import { ScoreField, TeamSelect } from "./form-fields";
 import { TeamLabel } from "./team-label";
 import type { PredictionDraft, ResultHandler } from "./types";
@@ -19,6 +20,7 @@ type MatchCardProps = {
   state: AppState;
   match: Match;
   prediction?: Prediction;
+  groupPredictions: Prediction[];
   result?: Result;
   adminMode: boolean;
   matchLockMode: MatchLockMode;
@@ -32,6 +34,7 @@ export function MatchCard({
   state,
   match,
   prediction,
+  groupPredictions,
   result,
   adminMode,
   matchLockMode,
@@ -61,6 +64,7 @@ export function MatchCard({
   const isPredictionLocked = predictionLocked(match, matchSetting);
   const canEdit = resolved && (adminMode || !isPredictionLocked);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+  const [groupPredictionsOpen, setGroupPredictionsOpen] = useState(false);
   const lastSavedRef = useRef("");
   const [editVersion, setEditVersion] = useState(0);
   const latestEditVersionRef = useRef(0);
@@ -70,6 +74,20 @@ export function MatchCard({
     [adminMode, awayGoals, homeGoals, qualifiedTeamId]
   );
   const formattedStartsAt = useMemo(() => formatMatchDate(match.startsAt), [match.startsAt]);
+  const canRevealGroupPredictions = Boolean(result) || isPredictionLocked;
+  const groupPredictionRows = useMemo(() => {
+    const usersById = new Map(state.users.map((user) => [user.id, user]));
+    return [...groupPredictions]
+      .sort((first, second) => {
+        const firstName = usersById.get(first.userId)?.name ?? "";
+        const secondName = usersById.get(second.userId)?.name ?? "";
+        return firstName.localeCompare(secondName, "es") || first.userId.localeCompare(second.userId);
+      })
+      .map((item) => ({
+        prediction: item,
+        userName: usersById.get(item.userId)?.name ?? "Participante"
+      }));
+  }, [groupPredictions, state.users]);
   const predictionText =
     prediction?.homeGoals !== null && prediction?.homeGoals !== undefined && prediction?.awayGoals !== null && prediction?.awayGoals !== undefined
       ? `${homeName} ${prediction.homeGoals} - ${prediction.awayGoals} ${awayName}`
@@ -280,8 +298,80 @@ export function MatchCard({
             </div>
           ) : null}
         </div>
+
+        <div className="mt-3 rounded-md border border-[#dfe5d8] bg-white">
+          <button
+            type="button"
+            className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left"
+            onClick={() => setGroupPredictionsOpen((open) => !open)}
+            aria-expanded={groupPredictionsOpen}
+          >
+            <span className="flex min-w-0 items-center gap-2 text-sm font-bold text-ink">
+              <Users size={16} className="shrink-0 text-pitch" />
+              <span className="truncate">Predicciones del grupo</span>
+              {canRevealGroupPredictions ? (
+                <span className="shrink-0 rounded-full bg-[#eef4e9] px-2 py-0.5 text-xs font-black text-[#586257]">
+                  {groupPredictionRows.length}
+                </span>
+              ) : null}
+            </span>
+            <ChevronDown
+              size={18}
+              className={cn("shrink-0 text-[#68736a] transition-transform", groupPredictionsOpen ? "rotate-180" : undefined)}
+            />
+          </button>
+          {groupPredictionsOpen ? (
+            <div className="border-t border-[#dfe5d8] px-3 py-3">
+              {canRevealGroupPredictions ? (
+                <GroupPredictions
+                  rows={groupPredictionRows}
+                  homeName={homeName}
+                  awayName={awayName}
+                  result={result}
+                />
+              ) : (
+                <p className="text-sm font-semibold text-[#68736a]">Se muestran cuando cierre la prediccion del partido.</p>
+              )}
+            </div>
+          ) : null}
+        </div>
       </CardContent>
     </Card>
+  );
+}
+
+function GroupPredictions({
+  rows,
+  homeName,
+  awayName,
+  result
+}: {
+  rows: { prediction: Prediction; userName: string }[];
+  homeName: string;
+  awayName: string;
+  result?: Result;
+}) {
+  if (!rows.length) {
+    return <p className="text-sm font-semibold text-[#68736a]">Todavia no hay predicciones cargadas para este partido.</p>;
+  }
+
+  return (
+    <div className="grid gap-2">
+      {rows.map(({ prediction, userName }) => (
+        <div key={prediction.id} className="grid gap-2 rounded-md bg-[#f2f5ee] px-3 py-2 sm:grid-cols-[1fr_auto_auto] sm:items-center">
+          <p className="min-w-0 truncate text-sm font-bold text-ink">{userName}</p>
+          <div className="text-sm font-black text-ink">
+            {prediction.homeGoals === null || prediction.awayGoals === null
+              ? "Sin prediccion"
+              : `${homeName} ${prediction.homeGoals} - ${prediction.awayGoals} ${awayName}`}
+            {prediction.qualifiedTeamId ? (
+              <span className="ml-2 text-xs font-bold text-[#68736a]">pasa {teamName(prediction.qualifiedTeamId)}</span>
+            ) : null}
+          </div>
+          <p className="text-sm font-black text-pitch sm:text-right">{result ? `${prediction.points} pts` : "Pts pendientes"}</p>
+        </div>
+      ))}
+    </div>
   );
 }
 

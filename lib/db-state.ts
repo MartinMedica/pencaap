@@ -2,8 +2,9 @@ import { currentUser } from "@clerk/nextjs/server";
 import { prisma } from "./prisma";
 import { matchSettingSelect, toUiMatchSetting, toUiResult } from "./db-mappers";
 import { dbTeams, matches } from "./fixture";
+import { predictionLocked } from "./locks";
 import { recalculatePredictions } from "./scoring";
-import type { AppState, Phase, User } from "./types";
+import type { AppState, MatchSetting, Phase, Prediction, Result, User } from "./types";
 import type { MemberRole, Phase as DbPhase } from "@prisma/client";
 
 const phaseToDb: Record<Phase, DbPhase> = {
@@ -112,6 +113,22 @@ export async function getAppStateForUser(userId?: string): Promise<AppState> {
     prisma.match.findMany({ select: matchSettingSelect })
   ]);
 
+  const resultsUi = results.map(toUiResult);
+  const matchSettingsUi = dbMatches.map(toUiMatchSetting);
+  const visiblePredictions = predictions
+    .map((prediction) => ({
+      id: prediction.id,
+      poolId: prediction.poolId,
+      userId: prediction.userId,
+      matchId: prediction.matchId,
+      homeGoals: prediction.homeGoals,
+      awayGoals: prediction.awayGoals,
+      qualifiedTeamId: prediction.qualifiedTeamId,
+      points: prediction.points,
+      updatedAt: prediction.updatedAt.toISOString()
+    }))
+    .filter((prediction) => predictionVisibleToUser(prediction, userId, resultsUi, matchSettingsUi));
+
   const state: AppState = {
     users: users.map((user) => ({ id: user.id, name: user.name, email: user.email })),
     pools: pools.map((pool) => ({
@@ -126,19 +143,9 @@ export async function getAppStateForUser(userId?: string): Promise<AppState> {
       role: roleToUi(member.role),
       joinedAt: member.joinedAt.toISOString()
     })),
-    predictions: predictions.map((prediction) => ({
-      id: prediction.id,
-      poolId: prediction.poolId,
-      userId: prediction.userId,
-      matchId: prediction.matchId,
-      homeGoals: prediction.homeGoals,
-      awayGoals: prediction.awayGoals,
-      qualifiedTeamId: prediction.qualifiedTeamId,
-      points: prediction.points,
-      updatedAt: prediction.updatedAt.toISOString()
-    })),
-    results: results.map(toUiResult),
-    matchSettings: dbMatches.map(toUiMatchSetting)
+    predictions: visiblePredictions,
+    results: resultsUi,
+    matchSettings: matchSettingsUi
   };
 
   return {
@@ -154,4 +161,19 @@ export function uiUser(user: User | Awaited<ReturnType<typeof ensureCurrentDbUse
 
 function roleToUi(role: MemberRole) {
   return role === "ADMIN" ? "admin" : "member";
+}
+
+function predictionVisibleToUser(
+  prediction: Prediction,
+  userId: string | undefined,
+  results: Result[],
+  matchSettings: MatchSetting[]
+) {
+  if (prediction.userId === userId) return true;
+  if (results.some((result) => result.matchId === prediction.matchId)) return true;
+
+  const match = matches.find((item) => item.id === prediction.matchId);
+  if (!match) return false;
+
+  return predictionLocked(match, matchSettings.find((setting) => setting.matchId === prediction.matchId));
 }
