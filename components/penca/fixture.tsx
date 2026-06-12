@@ -1,13 +1,15 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { groups, matches } from "@/lib/fixture";
 import type { AppState, Match, MatchLockMode, Pool, Prediction, Result, User } from "@/lib/types";
 import { MatchCard } from "./match-card";
 import { PhaseFilter } from "./phase-filter";
 import type { PhaseValue, PredictionDraft } from "./types";
 import { Button } from "@/components/ui/button";
-import { Lock, Unlock } from "lucide-react";
+import { CalendarDays, List, Lock, Unlock } from "lucide-react";
+
+type MatchSortMode = "fixture" | "date";
 
 type FixtureProps = {
   adminMode: boolean;
@@ -36,11 +38,22 @@ export function Fixture({
   onPhaseLockChange,
   onTeamOverrideChange
 }: FixtureProps) {
-  const visibleMatches = matches.filter((match) => match.phase === activePhase);
+  const [sortMode, setSortMode] = useState<MatchSortMode>("fixture");
+  const visibleMatches = useMemo(() => matches.filter((match) => match.phase === activePhase), [activePhase]);
+  const sortedMatches = useMemo(() => sortMatches(visibleMatches, sortMode), [sortMode, visibleMatches]);
 
   return (
     <div className="space-y-4">
       <PhaseFilter activePhase={activePhase} state={state} onPhase={onPhase} />
+      <div className="flex flex-wrap items-center gap-2 rounded-lg border border-[#dfe5d8] bg-white p-2 shadow-soft">
+        <span className="px-2 text-sm font-bold text-[#586257]">Orden</span>
+        <Button size="sm" variant={sortMode === "fixture" ? "default" : "ghost"} onClick={() => setSortMode("fixture")}>
+          <List size={16} /> Fixture
+        </Button>
+        <Button size="sm" variant={sortMode === "date" ? "default" : "ghost"} onClick={() => setSortMode("date")}>
+          <CalendarDays size={16} /> Fecha
+        </Button>
+      </div>
       {adminMode ? (
         <div className="flex flex-wrap gap-2 rounded-lg border border-[#dfe5d8] bg-white p-3 shadow-soft">
           <Button size="sm" variant="outline" onClick={() => onPhaseLockChange(visibleMatches.map((match) => match.id), "LOCKED")}>
@@ -51,10 +64,10 @@ export function Fixture({
           </Button>
         </div>
       ) : null}
-      {activePhase === "Grupos" ? (
+      {activePhase === "Grupos" && sortMode === "fixture" ? (
         <div className="space-y-5">
           {groups.map((group) => {
-            const groupMatches = visibleMatches.filter((match) => match.group === group);
+            const groupMatches = sortedMatches.filter((match) => match.group === group);
             return (
               <section key={group} className="space-y-3">
                 <h2 className="text-xl font-black">Grupo {group}</h2>
@@ -75,7 +88,7 @@ export function Fixture({
         </div>
       ) : (
         <MatchGrid
-          matches={visibleMatches}
+          matches={sortedMatches}
           adminMode={adminMode}
           state={state}
           user={user}
@@ -88,6 +101,13 @@ export function Fixture({
       )}
     </div>
   );
+}
+
+function sortMatches(items: Match[], sortMode: MatchSortMode) {
+  return [...items].sort((a, b) => {
+    if (sortMode === "date") return new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime() || a.order - b.order;
+    return a.order - b.order;
+  });
 }
 
 function MatchGrid({
