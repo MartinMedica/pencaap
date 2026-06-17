@@ -15,6 +15,7 @@ import { TeamLabel } from "./team-label";
 import type { PredictionDraft, ResultHandler } from "./types";
 
 type SaveStatus = "idle" | "dirty" | "saving" | "saved" | "error";
+type FocusedScoreField = "home" | "away" | null;
 
 type MatchCardProps = {
   state: AppState;
@@ -58,6 +59,7 @@ export function MatchCard({
   const [qualifiedTeamId, setQualifiedTeamId] = useState(
     adminMode ? result?.qualifiedTeamId ?? homeTeamId : prediction?.qualifiedTeamId ?? homeTeamId
   );
+  const [focusedScoreField, setFocusedScoreField] = useState<FocusedScoreField>(null);
   const hasValidScore = isValidGoal(homeGoals) && isValidGoal(awayGoals);
   const isDraw = hasValidScore && Number(homeGoals) === Number(awayGoals);
   const showTiebreaker = hasValidScore && isDraw && match.knockout;
@@ -92,22 +94,22 @@ export function MatchCard({
     prediction?.homeGoals !== null && prediction?.homeGoals !== undefined && prediction?.awayGoals !== null && prediction?.awayGoals !== undefined
       ? `${homeName} ${prediction.homeGoals} - ${prediction.awayGoals} ${awayName}`
       : "Sin prediccion";
+  const serverHomeGoals = String(adminMode ? result?.homeGoals ?? "" : prediction?.homeGoals ?? "");
+  const serverAwayGoals = String(adminMode ? result?.awayGoals ?? "" : prediction?.awayGoals ?? "");
+  const serverQualifiedTeamId = adminMode ? result?.qualifiedTeamId ?? homeTeamId : prediction?.qualifiedTeamId ?? homeTeamId;
   const serverSignature = useMemo(
-    () =>
-      `${adminMode ? "admin" : "prediction"}:${adminMode ? result?.homeGoals ?? "" : prediction?.homeGoals ?? ""}:${
-        adminMode ? result?.awayGoals ?? "" : prediction?.awayGoals ?? ""
-      }:${adminMode ? result?.qualifiedTeamId ?? homeTeamId : prediction?.qualifiedTeamId ?? homeTeamId}`,
-    [adminMode, homeTeamId, prediction, result]
+    () => `${adminMode ? "admin" : "prediction"}:${serverHomeGoals}:${serverAwayGoals}:${serverQualifiedTeamId}`,
+    [adminMode, serverAwayGoals, serverHomeGoals, serverQualifiedTeamId]
   );
 
   useEffect(() => {
     if (editVersion > 0 || saveStatus === "saving") return;
-    setHomeGoals(String(adminMode ? result?.homeGoals ?? "" : prediction?.homeGoals ?? ""));
-    setAwayGoals(String(adminMode ? result?.awayGoals ?? "" : prediction?.awayGoals ?? ""));
-    setQualifiedTeamId(adminMode ? result?.qualifiedTeamId ?? homeTeamId : prediction?.qualifiedTeamId ?? homeTeamId);
+    if (focusedScoreField !== "home") setHomeGoals(serverHomeGoals);
+    if (focusedScoreField !== "away") setAwayGoals(serverAwayGoals);
+    setQualifiedTeamId(serverQualifiedTeamId);
     lastSavedRef.current = serverSignature;
     setSaveStatus("idle");
-  }, [adminMode, editVersion, homeTeamId, prediction, result, saveStatus, serverSignature]);
+  }, [editVersion, focusedScoreField, saveStatus, serverAwayGoals, serverHomeGoals, serverQualifiedTeamId, serverSignature]);
 
   const save = useCallback(async () => {
     if (!resolved) return false;
@@ -246,8 +248,22 @@ export function MatchCard({
           <>
             <div className="mt-4 grid grid-cols-2 items-end gap-2 sm:grid-cols-[1fr_76px_76px]">
               <div className="col-span-2 text-sm font-semibold text-[#586257] sm:col-span-1">{adminMode ? "Resultado real" : "Tu prediccion"}</div>
-              <ScoreField label={homeName} value={homeGoals} onChange={updateHomeGoals} disabled={!canEdit} />
-              <ScoreField label={awayName} value={awayGoals} onChange={updateAwayGoals} disabled={!canEdit} />
+              <ScoreField
+                label={homeName}
+                value={homeGoals}
+                onChange={updateHomeGoals}
+                onFocus={() => setFocusedScoreField("home")}
+                onBlur={() => setFocusedScoreField(null)}
+                disabled={!canEdit}
+              />
+              <ScoreField
+                label={awayName}
+                value={awayGoals}
+                onChange={updateAwayGoals}
+                onFocus={() => setFocusedScoreField("away")}
+                onBlur={() => setFocusedScoreField(null)}
+                disabled={!canEdit}
+              />
             </div>
 
             {showTiebreaker ? (

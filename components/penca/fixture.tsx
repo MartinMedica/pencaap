@@ -38,7 +38,7 @@ export function Fixture({
   onPhaseLockChange,
   onTeamOverrideChange
 }: FixtureProps) {
-  const [sortMode, setSortMode] = useState<MatchSortMode>("fixture");
+  const [sortMode, setSortMode] = useState<MatchSortMode>("date");
   const visibleMatches = useMemo(() => matches.filter((match) => match.phase === activePhase), [activePhase]);
   const sortedMatches = useMemo(() => sortMatches(visibleMatches, sortMode), [sortMode, visibleMatches]);
 
