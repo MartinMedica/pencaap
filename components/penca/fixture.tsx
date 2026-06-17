@@ -39,7 +39,14 @@ export function Fixture({
   onTeamOverrideChange
 }: FixtureProps) {
   const [sortMode, setSortMode] = useState<MatchSortMode>("date");
-  const visibleMatches = useMemo(() => matches.filter((match) => match.phase === activePhase), [activePhase]);
+  const [hidePastMatches, setHidePastMatches] = useState(false);
+  const phaseMatches = useMemo(() => matches.filter((match) => match.phase === activePhase), [activePhase]);
+  const resultMatchIds = useMemo(() => new Set(state.results.map((result) => result.matchId)), [state.results]);
+  const todayStart = startOfToday();
+  const visibleMatches = useMemo(
+    () => phaseMatches.filter((match) => !hidePastMatches || !isPastMatch(match, resultMatchIds, todayStart)),
+    [hidePastMatches, phaseMatches, resultMatchIds, todayStart]
+  );
   const sortedMatches = useMemo(() => sortMatches(visibleMatches, sortMode), [sortMode, visibleMatches]);
 
   return (
@@ -53,21 +60,38 @@ export function Fixture({
         <Button size="sm" variant={sortMode === "date" ? "default" : "ghost"} onClick={() => setSortMode("date")}>
           <CalendarDays size={16} /> Fecha
         </Button>
+        <label className="ml-0 flex cursor-pointer items-center gap-2 px-2 text-sm font-bold text-[#586257] sm:ml-auto">
+          <input
+            type="checkbox"
+            className="peer sr-only"
+            checked={hidePastMatches}
+            onChange={(event) => setHidePastMatches(event.target.checked)}
+          />
+          <span className="h-6 w-11 rounded-full bg-[#dfe5d8] p-1 transition-colors peer-checked:bg-pitch">
+            <span className={`block h-4 w-4 rounded-full bg-white shadow transition-transform ${hidePastMatches ? "translate-x-5" : ""}`} />
+          </span>
+          Ocultar pasados
+        </label>
       </div>
       {adminMode ? (
         <div className="flex flex-wrap gap-2 rounded-lg border border-[#dfe5d8] bg-white p-3 shadow-soft">
-          <Button size="sm" variant="outline" onClick={() => onPhaseLockChange(visibleMatches.map((match) => match.id), "LOCKED")}>
+          <Button size="sm" variant="outline" onClick={() => onPhaseLockChange(phaseMatches.map((match) => match.id), "LOCKED")}>
             <Lock size={16} /> Bloquear fase
           </Button>
-          <Button size="sm" variant="outline" onClick={() => onPhaseLockChange(visibleMatches.map((match) => match.id), "OPEN")}>
+          <Button size="sm" variant="outline" onClick={() => onPhaseLockChange(phaseMatches.map((match) => match.id), "OPEN")}>
             <Unlock size={16} /> Liberar fase
           </Button>
         </div>
       ) : null}
-      {activePhase === "Grupos" && sortMode === "fixture" ? (
+      {!sortedMatches.length ? (
+        <p className="rounded-lg border border-[#dfe5d8] bg-white p-4 text-sm font-semibold text-[#68736a] shadow-soft">
+          No hay partidos para mostrar con los filtros actuales.
+        </p>
+      ) : activePhase === "Grupos" && sortMode === "fixture" ? (
         <div className="space-y-5">
           {groups.map((group) => {
             const groupMatches = sortedMatches.filter((match) => match.group === group);
+            if (!groupMatches.length) return null;
             return (
               <section key={group} className="space-y-3">
                 <h2 className="text-xl font-black">Grupo {group}</h2>
@@ -101,6 +125,18 @@ export function Fixture({
       )}
     </div>
   );
+}
+
+function startOfToday() {
+  const today = new Date();
+  return new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+}
+
+function isPastMatch(match: Match, resultMatchIds: Set<string>, todayStart: number) {
+  if (resultMatchIds.has(match.id)) return true;
+  const startsAt = new Date(match.startsAt);
+  const matchDay = new Date(startsAt.getFullYear(), startsAt.getMonth(), startsAt.getDate()).getTime();
+  return matchDay < todayStart;
 }
 
 function sortMatches(items: Match[], sortMode: MatchSortMode) {
