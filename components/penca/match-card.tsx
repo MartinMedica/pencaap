@@ -15,7 +15,6 @@ import { TeamLabel } from "./team-label";
 import type { PredictionDraft, ResultHandler } from "./types";
 
 type SaveStatus = "idle" | "dirty" | "saving" | "saved" | "error";
-type FocusedScoreField = "home" | "away" | null;
 
 type MatchCardProps = {
   state: AppState;
@@ -59,7 +58,6 @@ export function MatchCard({
   const [qualifiedTeamId, setQualifiedTeamId] = useState(
     adminMode ? result?.qualifiedTeamId ?? homeTeamId : prediction?.qualifiedTeamId ?? homeTeamId
   );
-  const [focusedScoreField, setFocusedScoreField] = useState<FocusedScoreField>(null);
   const hasValidScore = isValidGoal(homeGoals) && isValidGoal(awayGoals);
   const isDraw = hasValidScore && Number(homeGoals) === Number(awayGoals);
   const showTiebreaker = hasValidScore && isDraw && match.knockout;
@@ -104,12 +102,10 @@ export function MatchCard({
 
   useEffect(() => {
     if (editVersion > 0 || saveStatus === "saving") return;
-    if (focusedScoreField !== "home") setHomeGoals(serverHomeGoals);
-    if (focusedScoreField !== "away") setAwayGoals(serverAwayGoals);
     setQualifiedTeamId(serverQualifiedTeamId);
     lastSavedRef.current = serverSignature;
     setSaveStatus("idle");
-  }, [editVersion, focusedScoreField, saveStatus, serverAwayGoals, serverHomeGoals, serverQualifiedTeamId, serverSignature]);
+  }, [editVersion, saveStatus, serverQualifiedTeamId, serverSignature]);
 
   const save = useCallback(async () => {
     if (!resolved) return false;
@@ -252,16 +248,12 @@ export function MatchCard({
                 label={homeName}
                 value={homeGoals}
                 onChange={updateHomeGoals}
-                onFocus={() => setFocusedScoreField("home")}
-                onBlur={() => setFocusedScoreField(null)}
                 disabled={!canEdit}
               />
               <ScoreField
                 label={awayName}
                 value={awayGoals}
                 onChange={updateAwayGoals}
-                onFocus={() => setFocusedScoreField("away")}
-                onBlur={() => setFocusedScoreField(null)}
                 disabled={!canEdit}
               />
             </div>

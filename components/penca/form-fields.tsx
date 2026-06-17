@@ -26,12 +26,10 @@ type ScoreFieldProps = {
   label: string;
   value: string;
   onChange: (value: string) => void;
-  onBlur?: () => void;
-  onFocus?: () => void;
   disabled?: boolean;
 };
 
-export function ScoreField({ label, value, onChange, onBlur, onFocus, disabled }: ScoreFieldProps) {
+export function ScoreField({ label, value, onChange, disabled }: ScoreFieldProps) {
   return (
     <Label>
       <span className="block truncate text-xs">{label}</span>
@@ -41,9 +39,7 @@ export function ScoreField({ label, value, onChange, onBlur, onFocus, disabled }
         min={0}
         value={value}
         disabled={disabled}
-        onBlur={onBlur}
         onChange={(event) => onChange(event.target.value)}
-        onFocus={onFocus}
       />
     </Label>
   );
