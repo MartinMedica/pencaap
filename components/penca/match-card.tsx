@@ -102,10 +102,14 @@ export function MatchCard({
 
   useEffect(() => {
     if (editVersion > 0 || saveStatus === "saving") return;
+    if (adminMode) {
+      setHomeGoals(serverHomeGoals);
+      setAwayGoals(serverAwayGoals);
+    }
     setQualifiedTeamId(serverQualifiedTeamId);
     lastSavedRef.current = serverSignature;
     setSaveStatus("idle");
-  }, [editVersion, saveStatus, serverQualifiedTeamId, serverSignature]);
+  }, [adminMode, editVersion, saveStatus, serverAwayGoals, serverHomeGoals, serverQualifiedTeamId, serverSignature]);
 
   const save = useCallback(async () => {
     if (!resolved) return false;
