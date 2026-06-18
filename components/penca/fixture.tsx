@@ -42,10 +42,9 @@ export function Fixture({
   const [hidePastMatches, setHidePastMatches] = useState(false);
   const phaseMatches = useMemo(() => matches.filter((match) => match.phase === activePhase), [activePhase]);
   const resultMatchIds = useMemo(() => new Set(state.results.map((result) => result.matchId)), [state.results]);
-  const todayStart = startOfToday();
   const visibleMatches = useMemo(
-    () => phaseMatches.filter((match) => !hidePastMatches || !isPastMatch(match, resultMatchIds, todayStart)),
-    [hidePastMatches, phaseMatches, resultMatchIds, todayStart]
+    () => phaseMatches.filter((match) => !hidePastMatches || !resultMatchIds.has(match.id)),
+    [hidePastMatches, phaseMatches, resultMatchIds]
   );
   const sortedMatches = useMemo(() => sortMatches(visibleMatches, sortMode), [sortMode, visibleMatches]);
 
@@ -125,18 +124,6 @@ export function Fixture({
       )}
     </div>
   );
-}
-
-function startOfToday() {
-  const today = new Date();
-  return new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
-}
-
-function isPastMatch(match: Match, resultMatchIds: Set<string>, todayStart: number) {
-  if (resultMatchIds.has(match.id)) return true;
-  const startsAt = new Date(match.startsAt);
-  const matchDay = new Date(startsAt.getFullYear(), startsAt.getMonth(), startsAt.getDate()).getTime();
-  return matchDay < todayStart;
 }
 
 function sortMatches(items: Match[], sortMode: MatchSortMode) {
