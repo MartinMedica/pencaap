@@ -10,7 +10,7 @@ import {
   updateMatchTeamOverrideAction,
   updatePhaseLockAction
 } from "@/app/actions";
-import { phases } from "@/lib/fixture";
+import { currentFixturePhase } from "@/lib/fixture";
 import { predictionLocked } from "@/lib/locks";
 import { firstPoolForUser } from "@/lib/store";
 import type { AppState, Match, MatchLockMode, Result, User } from "@/lib/types";
@@ -38,7 +38,7 @@ export function PencaApp({
   const [activePoolId, setActivePoolId] = useState<string | null>(
     currentUser ? initialActivePoolId ?? firstPoolForUser(initialState, currentUser.id)?.id ?? null : null
   );
-  const [activePhase, setActivePhase] = useState<PhaseValue>(phases[0]);
+  const [activePhase, setActivePhase] = useState<PhaseValue>(() => currentFixturePhase());
   const [tab, setTab] = useState<AppTab>("predicciones");
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");

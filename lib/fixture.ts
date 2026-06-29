@@ -1,6 +1,7 @@
 import type { AppState, Match, Phase, Team } from "./types";
 
 export const phases: Phase[] = ["Grupos", "16avos", "Octavos", "Cuartos", "Semifinal", "Tercer puesto", "Final"];
+const PHASE_ACTIVE_WINDOW_HOURS = 3;
 
 export const groups = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"] as const;
 
@@ -236,7 +237,22 @@ export function isMatchResolved(match: Match, state: AppState) {
 
 export function phaseEnabled(phase: Phase, state: AppState) {
   if (phase === "Grupos") return true;
+  if (phase === currentFixturePhase()) return true;
   return matches.some((match) => match.phase === phase && isMatchResolved(match, state));
+}
+
+export function currentFixturePhase(now = new Date()): Phase {
+  const timestamp = now.getTime();
+
+  for (let index = 0; index < phases.length; index += 1) {
+    const phaseMatches = matches.filter((match) => match.phase === phases[index]);
+    const lastStartsAt = Math.max(...phaseMatches.map((match) => new Date(match.startsAt).getTime()));
+    const activeUntil = lastStartsAt + PHASE_ACTIVE_WINDOW_HOURS * 60 * 60 * 1000;
+
+    if (timestamp <= activeUntil) return phases[index];
+  }
+
+  return phases[phases.length - 1];
 }
 
 export function sideCandidateTeamIds(match: Match, side: "home" | "away", state: AppState) {
